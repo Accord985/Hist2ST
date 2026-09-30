@@ -16,7 +16,7 @@ JHU EN.580.697 26 fall, Project F. A model that is trained to predict spatial ge
 
 ```
 uv venv --python 3.11
-pip pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 **Using `conda`** (conda needs to be installed first)
@@ -31,17 +31,18 @@ pip install -r requirements.txt
 
 ## Document Structure
 
-`.env` the huggingface access key. DO NOT UPLOAD TO GITHUB
+`.env` the huggingface access key. NEVER COMMITTED
+`.env.example` a sample of what an `.env` would look like.
 `requirements.txt` dependencies
 `README.md` what it is, how to install, how to run
 `environment.yml` or `requirements.txt`
 `.gitignore` `data/`, `outputs/`, checkpoints, large files
 `configs/` *(not yet added)* experiment settings (e.g., YAML)
 `src/` reusable code: data loading, models, metrics
-`scripts/` `train.py`, `evaluate.py`, `make_figures.py`
+`scripts/` short helpers like `train.py`, `evaluate.py`, `make_figures.py`
 `notebooks/` EDA and demos (call functions from `src/`)
 `splits/` saved train/validation/test ID lists
 `jobs/` cluster batch scripts
-`docs/` notes, meeting notes
+`docs/` notes, meeting notes, design choices
 
 In `.gitignore`: Large data, checkpoints (`checkpoints`), and generated outputs (`outputs`) are not tracked in Git
