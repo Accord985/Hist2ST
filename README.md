@@ -1,15 +1,6 @@
 # Hist2ST
 JHU EN.580.697 26 fall, Project F. A model that is trained to predict spatial gene expression (Spatial Transcriptomics) from H&amp;E stains (Histogram). Data comes from HEST-1k. 
 
-# Important PLEASE READ
-- main should always run
-- one task per branch; merge only after a teammate reviews
-- commit small changes often
-- never commit large data files or model weights unless agreed
-- never commit passwords, API keys, restricted data, or patient data (PHI)
-- notebooks for exploration; final code as functions and scripts
-- document how to reproduce key results
-
 ## How to run
 
 **Using `venv`**
@@ -31,18 +22,18 @@ pip install -r requirements.txt
 
 ## Document Structure
 
-`.env` the huggingface access key. NEVER COMMITTED
-`.env.example` a sample of what an `.env` would look like.
-`requirements.txt` dependencies
-`README.md` what it is, how to install, how to run
-`environment.yml` or `requirements.txt`
-`.gitignore` `data/`, `outputs/`, checkpoints, large files
-`configs/` *(not yet added)* experiment settings (e.g., YAML)
-`src/` reusable code: data loading, models, metrics
-`scripts/` short helpers like `train.py`, `evaluate.py`, `make_figures.py`
-`notebooks/` EDA and demos (call functions from `src/`)
-`splits/` saved train/validation/test ID lists
-`jobs/` cluster batch scripts
-`docs/` notes, meeting notes, design choices
+- `.env` the huggingface access key. NEVER COMMITTED
+- `.env.example` a sample of what an `.env` would look like.
+- `README.md` (this file) what the project is, how to install, how to run
+- `requirements.txt` dependencies
+- `.gitignore` includes the data folder `data/`, output folder `outputs/`, checkpoints `checkpoints/`, large files
+- `configs/` experiment settings (e.g., YAML)
+- `src/` reusable code: data loading, models, metrics
+- `scripts/` short helpers like `train.py`, `evaluate.py`,  `make_figures.py`
+- `notebooks/` EDA and demos (call functions from `src/`)
+- `splits/` saved train/validation/test ID lists
+- `jobs/` cluster batch scripts
+- `docs/` notes, meeting notes, design choices
+- `Presentation/` presentation slides
 
 In `.gitignore`: Large data, checkpoints (`checkpoints`), and generated outputs (`outputs`) are not tracked in Git
