@@ -1,10 +1,12 @@
 .env
-.conda
-.vscode
-checkpoints
-outputs
-data
+checkpoints/
+outputs/
+data/
 
 # python compiled files, in __pycache__ and ends with pyc/pyo/pyd
 **/__pycache__/
 *.py[cod]
+
+.vscode/
+.idea/
+.conda/
