@@ -1,4 +1,4 @@
-# PCA on foundation-model embeddings
+# PCA on foundation-model embeddings (USELESS)
 
 Notebook: `notebooks/pca_on_embeddings.ipynb`
 
