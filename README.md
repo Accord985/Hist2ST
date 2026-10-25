@@ -19,13 +19,15 @@ conda activate my_env
 pip install -r requirements.txt
 ```
 
+Windows Users with Navida GPU: Go to [pytorch official site](https://pytorch.org/) for the command to download pytorch with hardware acceleration (CUDA).
+
 
 ## Document Structure
 
 - `.env` the huggingface access key. NEVER COMMITTED
 - `.env.example` a sample of what an `.env` would look like.
 - `README.md` (this file) what the project is, how to install, how to run
-- `requirements.txt` dependencies
+- `requirements.txt` dependencies for the scripts in `scripts/`
 - `.gitignore` includes the data folder `data/`, output folder `outputs/`, checkpoints `checkpoints/`, large files
 - `configs/` experiment settings (e.g., YAML)
 - `src/` reusable code: data loading, models, metrics
