@@ -189,7 +189,9 @@ def export_slide(patches_path, expression_path, output_dir, slide_id):
     adata = anndata.read_h5ad(expression_path, backed='r')
     try:
         if not adata.obs_names.is_unique:
-            raise ValueError('Expression barcodes must be unique.')
+            raise ValueError('Expression barcodes must be unique for unambiguous patch matching.')
+        # Gene symbols can repeat. Keep original names, column order and values;
+        # gene_index identifies each source feature without merging or renaming.
         genes = adata.var_names.astype(str).tolist()
         with h5py.File(patches_path, 'r') as patches:
             if not {'img', 'barcode'}.issubset(patches.keys()):
@@ -230,7 +232,8 @@ def export_slide(patches_path, expression_path, output_dir, slide_id):
                 if not np.isfinite(values).all():
                     raise ValueError(f'Nonfinite expression values for {barcode}')
                 # Save every gene, including zero values; no normalization/log transform.
-                pd.DataFrame({'gene_index': range(len(genes)), 'gene': genes, 'expression': values}).to_csv(
+                pd.DataFrame({'gene_index': range(len(genes)), 'gene': genes,
+                              'expression': values}).to_csv(
                     folder / f'{name}.csv', index=False)
                 location = {'slide_id': slide_id, 'patch_name': name, 'barcode': barcode,
                             'patch_index': i}

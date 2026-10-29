@@ -109,7 +109,7 @@ def random_split_data(data_folder, train_percentage, seed=None, output_dir=None)
     return [row['patch_dir'] for row in train], [row['patch_dir'] for row in test]
 
 
-def _ordered_records(input_path, split='train'):
+def _ordered_records(input_path, split='train', verify_files=True):
     """Load a split CSV, a folder containing that CSV, or an ordered path list."""
     if isinstance(input_path, (list, tuple)):
         records = []
@@ -138,6 +138,8 @@ def _ordered_records(input_path, split='train'):
     identities = [(row['slide_id'], row['patch_name']) for row in records]
     if len(set(identities)) != len(identities):
         raise ValueError('Duplicate patch identities in the split.')
+    if not verify_files:
+        return records
     complete = []
     for row in records:
         missing = [row[key] for key in ('image_path', 'expression_path', 'barcode_path')
@@ -159,6 +161,8 @@ def _save_tensor(tensor, output_path, metadata):
     if output.suffix != '.pt':
         raise ValueError('output_path must end with .pt')
     sidecar = output.with_suffix('.json')
+    if output.exists() or sidecar.exists():
+        raise FileExistsError(f'Choose a new output filename: {output}')
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_name(f'.{output.name}.{uuid.uuid4().hex}.tmp')
     try:
@@ -193,32 +197,151 @@ def load_pathfm(device=None):
     return model, transform
 
 
-def export_embeddings(input_path, model=None, transform=None, output_path=None, batch_size=32,
-                      split='train', device=None, output_selector=None):
-    """Encode the ordered patches and save one float32 tensor [N, embedding_dim].
+def _embedding_callable_id(value):
+    if value is None:
+        return None
+    return f'{getattr(value, "__module__", type(value).__module__)}.{getattr(value, "__qualname__", type(value).__qualname__)}'
 
-    input_path: train.csv/test.csv, their containing folder (use split), or the
-        ordered train_paths/test_paths returned by random_split_data.
-    model: optional loaded feature extractor; default loads GenBio PathFM.
-    transform: optional PIL RGB -> CHW callable; default uses the reference
-        PathFM resize/normalization. For other models, pass both arguments.
-    output_path: required .pt destination, e.g. train_embeddings.pt.
-    output_selector: optional callable selecting/pooling an embedding from model
-        outputs. Required for dictionaries, tuples, or token matrices; we never
-        guess which output represents a feature vector.
-    device: None chooses CUDA when available, otherwise CPU.
 
-    Uses eval/inference mode, never shuffles, and restores the model's prior
-    training mode. The model stays on the selected device. CPU RAM must hold the
-    final tensor; GPU holds only a batch. A .json sidecar preserves exact order.
-    """
+def _embedding_record_fingerprint(records):
+    from hest_content_pipeline import _checkpoint_fingerprint
+    return _checkpoint_fingerprint([
+        (r['slide_id'], r['patch_name'], str(r['image_path']), str(r['expression_path']))
+        for r in records])
+
+
+def _publish_embedding_prefix(path, prefix):
+    import torch
+    from hest_content_pipeline import _atomic_write
+    def write(destination):
+        with destination.open('wb') as handle:
+            torch.save(torch.from_numpy(prefix.copy()), handle)
+    _atomic_write(path, write)
+
+
+def _load_embedding_image(row, transform):
     import torch
     from PIL import Image
+    with Image.open(row['image_path']) as image:
+        item = transform(image.convert('RGB'))
+    if not isinstance(item, torch.Tensor) or item.ndim != 3:
+        raise ValueError('transform must return a CHW torch tensor.')
+    return item
+
+
+def _embedding_batches(records, begin, end, batch_size, transform, num_workers):
+    """Bounded, ordered CPU prefetch: at most one future model batch."""
+    from concurrent.futures import ThreadPoolExecutor
+    if num_workers == 0:
+        for start in range(begin, end, batch_size):
+            rows = records[start:min(start + batch_size, end)]
+            yield start, [_load_embedding_image(row, transform) for row in rows]
+        return
+    with ThreadPoolExecutor(max_workers=num_workers, thread_name_prefix='patch-loader') as pool:
+        def submit(start):
+            return [pool.submit(_load_embedding_image, row, transform)
+                    for row in records[start:min(start + batch_size, end)]]
+        pending = submit(begin)
+        for start in range(begin, end, batch_size):
+            # Consume futures in manifest order, regardless of completion order.
+            images = [future.result() for future in pending]
+            next_start = start + batch_size
+            pending = submit(next_start) if next_start < end else []
+            yield start, images
+
+
+def export_embeddings(input_path, model=None, transform=None, output_path=None, batch_size=32,
+                      split='train', device=None, output_selector=None, *, checkpoint_every=500,
+                      checkpoint_mode='resume', checkpoint_unit='batches', model_id=None,
+                      transform_id=None, selector_id=None, num_workers=4):
+    """Encode ordered patches with resumable CPU tensor checkpoints.
+
+    checkpoint_unit='batches' saves every 500 model forward passes by default;
+    use 'patches' to save every 500 patch rows instead. The last short interval
+    is always saved. batch_size independently controls GPU memory consumption.
+
+    Each .pt is an ordered PREFIX until complete. Its .json records row identities
+    and completion; .checkpoint.json and alternating .npz snapshots permit resume
+    without re-encoding saved rows. A complete checkpoint returns without loading
+    the model. Keep every sidecar on Drive. Existing outputs without checkpoint
+    sidecars require a fresh run. Image contents/weights are not rehashed; start
+    anew if they change. Use explicit versioned model_id/transform_id/selector_id
+    for custom models or processing. The notebook supplies fixed PathFM IDs.
+
+    This function requires the current companion hest_content_pipeline.py.
+    It never shuffles/skips saved manifest rows, preserving alignment with targets.
+    Missing/unreadable images stop processing while preserving the last checkpoint.
+    Model evaluation mode is restored on exit; GPU holds only a model batch.
+    num_workers parallelizes deterministic image decoding/transforms and prefetches
+    the next batch during inference. Set 0 for sequential loading; this setting
+    may change on resume without invalidating completed embeddings.
+    """
+    import numpy as np
+    import torch
+    from contextlib import closing
+    from hest_content_pipeline import (_checkpoint_fingerprint, _load_gene_checkpoint,
+        _commit_gene_checkpoint, _atomic_json, _checkpoint_file_hash)
     if output_path is None:
         raise ValueError('Specify output_path for the embedding .pt tensor.')
-    if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
-        raise ValueError('batch_size must be a positive integer.')
-    records = _ordered_records(input_path, split)
+    for name, value in [('batch_size', batch_size), ('checkpoint_every', checkpoint_every)]:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValueError(f'{name} must be a positive integer.')
+    if isinstance(num_workers, bool) or not isinstance(num_workers, int) or num_workers < 0:
+        raise ValueError('num_workers must be a nonnegative integer.')
+    if checkpoint_unit not in ('patches', 'batches'):
+        raise ValueError("checkpoint_unit must be 'patches' or 'batches'.")
+    path = Path(output_path).expanduser().resolve()
+    if path.suffix != '.pt':
+        raise ValueError('output_path must end with .pt')
+    records = _ordered_records(input_path, split, verify_files=False)
+    order_id = _embedding_record_fingerprint(records)
+    model_tag = model_id or ('genbio-ai/genbio-pathfm' if model is None else _embedding_callable_id(model))
+    transform_tag = transform_id or ('pathfm_rgb224_norm_v1' if transform is None else _embedding_callable_id(transform))
+    selector_tag = selector_id or _embedding_callable_id(output_selector)
+    fingerprint = _checkpoint_fingerprint(dict(version=1, order=order_id, model=model_tag,
+        transform=transform_tag, selector=selector_tag, batch_size=batch_size,
+        checkpoint_every=checkpoint_every, checkpoint_unit=checkpoint_unit))
+    stem = f'{path.name}.checkpoint'
+    restored = _load_gene_checkpoint(path.parent, stem, fingerprint, checkpoint_mode)
+    result = np.empty((len(records), 0), dtype=np.float32)
+    start = 0
+    if restored is not None:
+        state, arrays = restored
+        start = state['next_position']
+        prefix = arrays['embeddings']
+        if (prefix.ndim != 2 or prefix.shape[0] != start or not 0 <= start <= len(records)
+                or (start and prefix.shape[1] == 0) or not np.isfinite(prefix).all()):
+            raise ValueError('Invalid embedding checkpoint dimensions/values. Choose start anew.')
+        result = np.empty((len(records), prefix.shape[1]), dtype=np.float32)
+        result[:start] = prefix
+        print(f'Resumed {path.name}: {start}/{len(records)} patches.', flush=True)
+    else:
+        print(f'Starting {path.name}: {len(records)} patches.', flush=True)
+
+    def save(next_position):
+        state = dict(fingerprint=fingerprint, next_position=next_position, total=len(records))
+        def publish():
+            _publish_embedding_prefix(path, result[:next_position])
+            metadata = dict(kind='embeddings', shape=[next_position, result.shape[1]],
+                complete=next_position == len(records), total_patches=len(records),
+                processed_patches=next_position, model_id=model_tag, transform_id=transform_tag,
+                selector_id=selector_tag, checkpoint_unit=checkpoint_unit,
+                checkpoint_every=checkpoint_every, batch_size=batch_size,
+                num_workers=num_workers,
+                patches=records[:next_position])
+            _atomic_json(path.with_suffix('.json'), metadata)
+            return dict(shape=metadata['shape'], order_fingerprint=order_id,
+                tensor_sha256=_checkpoint_file_hash(path),
+                metadata_sha256=_checkpoint_file_hash(path.with_suffix('.json')))
+        _commit_gene_checkpoint(path.parent, stem, state,
+                                dict(embeddings=result[:next_position]), publish)
+        print(f'Saved {path.name}: {next_position}/{len(records)} patches.', flush=True)
+
+    # Repair a .pt/sidecar interrupted between publication and manifest commit.
+    save(start)
+    if start == len(records):
+        return torch.from_numpy(result)
+
     target = torch.device(device or ('cuda' if torch.cuda.is_available() else 'cpu'))
     if target.type == 'cuda' and not torch.cuda.is_available():
         raise RuntimeError('CUDA was requested but is unavailable.')
@@ -229,44 +352,60 @@ def export_embeddings(input_path, model=None, transform=None, output_path=None, 
     elif transform is None:
         from torchvision import transforms
         transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
+            transforms.Resize((224, 224)), transforms.ToTensor(),
             transforms.Normalize(mean=(0.697, 0.575, 0.728), std=(0.188, 0.240, 0.187)),
         ])
     model.to(target)
     previous_training = model.training
     model.eval()
-    result = None
+    interval = checkpoint_every * batch_size if checkpoint_unit == 'batches' else checkpoint_every
     try:
         with torch.inference_mode():
-            for start in range(0, len(records), batch_size):
-                rows = records[start:start + batch_size]
-                images = []
-                for row in rows:
-                    with Image.open(row['image_path']) as image:
-                        item = transform(image.convert('RGB'))
-                    if not isinstance(item, torch.Tensor) or item.ndim != 3:
-                        raise ValueError('transform must return a CHW torch tensor.')
-                    images.append(item)
-                batch = torch.stack(images).to(target)
-                features = model(batch)
-                if output_selector is not None:
-                    features = output_selector(features)
-                if not isinstance(features, torch.Tensor) or features.ndim != 2 or features.shape[0] != len(rows):
-                    raise ValueError('Model must return [batch, embedding_dim]; supply output_selector for other outputs.')
-                features = features.detach().to(device='cpu', dtype=torch.float32)
-                if features.shape[1] == 0 or not torch.isfinite(features).all():
-                    raise ValueError('Embedding vectors must be nonempty and finite.')
-                if result is None:
-                    result = torch.empty((len(records), features.shape[1]), dtype=torch.float32)
-                if features.shape[1] != result.shape[1]:
-                    raise ValueError('Model embedding dimension changed between batches.')
-                result[start:start + len(rows)] = features
+            for window_start in range(start, len(records), interval):
+                window_end = min(window_start + interval, len(records))
+                with closing(_embedding_batches(records, window_start, window_end,
+                                                batch_size, transform, num_workers)) as batches:
+                    for batch_start, images in batches:
+                        features = model(torch.stack(images).to(target))
+                        if output_selector is not None:
+                            features = output_selector(features)
+                        if (not isinstance(features, torch.Tensor) or features.ndim != 2
+                                or features.shape[0] != len(images)):
+                            raise ValueError('Model must return [batch, embedding_dim]; supply output_selector for other outputs.')
+                        features = features.detach().to(device='cpu', dtype=torch.float32).numpy()
+                        if features.shape[1] == 0 or not np.isfinite(features).all():
+                            raise ValueError('Embedding vectors must be nonempty and finite.')
+                        if result.shape[1] == 0:
+                            result = np.empty((len(records), features.shape[1]), dtype=np.float32)
+                        if features.shape[1] != result.shape[1]:
+                            raise ValueError('Model embedding dimension changed between batches.')
+                        result[batch_start:batch_start + len(images)] = features
+                save(window_end)
     finally:
         model.train(previous_training)
-    _save_tensor(result, output_path, dict(kind='embeddings', shape=list(result.shape),
-                 device_used=str(target), patches=records))
-    return result
+    return torch.from_numpy(result)
+
+
+def validate_embedding_checkpoint(output_path, input_path=None, split='train'):
+    """Reject partial, changed or reordered raw embeddings before PCA/training."""
+    from hest_content_pipeline import _checkpoint_file_hash
+    path = Path(output_path).expanduser().resolve()
+    checkpoint = path.parent/f'{path.name}.checkpoint.json'
+    if not checkpoint.exists():
+        raise RuntimeError(f'No completed checkpoint for {path.name}. Run/resume section 6.')
+    meta = json.loads(checkpoint.read_text(encoding='utf-8'))
+    if not meta.get('complete') or meta['next_position'] != meta['total']:
+        raise RuntimeError(f'{path.name} is partial ({meta["next_position"]}/{meta["total"]}). Resume section 6.')
+    if not path.is_file() or _checkpoint_file_hash(path) != meta['tensor_sha256']:
+        raise ValueError(f'{path.name} does not match its checkpoint. Resume section 6.')
+    sidecar = path.with_suffix('.json')
+    if not sidecar.is_file() or _checkpoint_file_hash(sidecar) != meta['metadata_sha256']:
+        raise ValueError(f'{path.name} metadata does not match its checkpoint. Resume section 6.')
+    if input_path is not None:
+        records = _ordered_records(input_path, split, verify_files=False)
+        if _embedding_record_fingerprint(records) != meta['order_fingerprint']:
+            raise ValueError('Embedding patch order/identity differs from the current split.')
+    return meta
 
 
 def _read_genes(expression_path):
