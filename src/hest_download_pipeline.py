@@ -1,4 +1,5 @@
-"""HEST selection and download functions for Google Colab or local Python.
+"""
+HEST selection and download functions for Google Colab or local Python.
 
 Install huggingface_hub and pandas, then import:
     from hest_download_pipeline import prepare_selection, download_selection

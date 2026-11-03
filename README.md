@@ -24,18 +24,21 @@ Windows Users with Navida GPU: Go to [pytorch official site](https://pytorch.org
 
 ## Document Structure
 
-- `.env` the huggingface access key. NEVER COMMITTED
-- `.env.example` a sample of what an `.env` would look like.
-- `README.md` (this file) what the project is, how to install, how to run
-- `requirements.txt` dependencies for the scripts in `scripts/`
-- `.gitignore` includes the data folder `data/`, output folder `outputs/`, checkpoints `checkpoints/`, large files
-- `configs/` experiment settings (e.g., YAML)
-- `src/` reusable code: data loading, models, metrics
-- `scripts/` short helpers like `train.py`, `evaluate.py`,  `make_figures.py`
-- `notebooks/` EDA and demos (call functions from `src/`)
-- `splits/` saved train/validation/test ID lists
-- `jobs/` cluster batch scripts
-- `docs/` notes, meeting notes, design choices
-- `Presentation/` presentation slides
+Names in brackets are *hidden*. They should never be commited, and their names have been tracked in `.gitignore`. 
 
-In `.gitignore`: Large data, checkpoints (`checkpoints`), and generated outputs (`outputs`) are not tracked in Git
+```text
+├── requirements.txt       # dependencies for the scripts in `scripts/`
+├── (data/)                # downloaded dataset.
+├── (outputs/)             # outputs from our model.
+├── (checkpoints/)         # checkpoints during training. 
+├── (.env)                 # the huggingface access key.
+├── .env.example           # a sample of what an .env would look like.
+├── configs/               # experiment settings (e.g., YAML)
+├── src/                   # reusable code: data loading, models, metrics
+|   ├── scripts/           # short helpers (ex. train/evaluate/make_figures)
+├── notebooks/             # explorations demos (call functions from `src/`)
+├── splits/                # saved train/validation/test ID lists
+├── jobs/                  # cluster batch scripts
+├── docs/                  # notes, meeting notes, design choices
+├── Presentation/          # presentation slides
+```
