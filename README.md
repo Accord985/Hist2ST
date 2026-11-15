@@ -22,7 +22,7 @@ pip install -r requirements.txt
 Windows Users with Navida GPU: Go to [pytorch official site](https://pytorch.org/) for the command to download pytorch with hardware acceleration (CUDA).
 
 
-## Document Structure
+## Repository layout
 
 Names in brackets are *hidden*. They should never be commited, and their names have been tracked in `.gitignore`. 
 
