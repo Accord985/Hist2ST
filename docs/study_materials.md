@@ -1,5 +1,7 @@
 # Study materials
 
+***Under construction***
+
 Replace the placeholder URLs with the team's OneDrive study notes when available.
 
 - [Python data basics for Onboarding 01](python_data_basics.ipynb)

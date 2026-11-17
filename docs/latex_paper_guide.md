@@ -1,5 +1,7 @@
 # Writing a Paper with LaTeX
 
+***AI-generated, for reference***
+
 This guide introduces the LaTeX workflow used in the course handout. It covers getting started, understanding `main.tex`, organizing a paper by sections, and adding common elements such as figures, tables, equations, and references.
 
 ## What LaTeX does

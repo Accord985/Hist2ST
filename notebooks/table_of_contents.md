@@ -30,7 +30,7 @@ Each notebook records an experiment. Results are recorded where available. Exper
 
 #TODO: fill in the missing results
 
-- [00 - Standard project workflow](exp_00_standard_workflow.ipynb): use shared `src/` helpers for cohort selection, clean export, and optional patch-level splitting.
+- [00 - Standard project workflow](exp_00_standard_workflow.ipynb): use workflow modules in `scripts/` with reusable helpers from `src/` for cohort selection, clean export, and optional patch-level splitting.
 - [Cohort filtering and split](exp_cohort_filtering_and_split.ipynb): alternate HEST filtering and sample-level splitting.
 - [PCA versus no PCA](exp_pca_vs_no_pca.ipynb): random-spot comparison and spatial-block follow-up.
 - [Neighborhood MLP](exp_neighborhood_mlp.ipynb): patient-fold spatial context experiment.

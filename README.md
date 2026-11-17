@@ -1,46 +1,36 @@
 # Hist2ST
 
-JHU EN.580.697 26 fall, Project F. A model that is trained to predict spatial gene expression (Spatial Transcriptomics) from H&amp;E stains (Histogram). Data comes from HEST-1k. 
-
-Hist2ST explores predicting spatial gene expression from H&E tissue images. The onboarding notebooks prepare aligned HEST breast data, extract image features, and evaluate a ridge-regression baseline. The experiment notebooks document alternate workflows and model comparisons.
+JHU EN.580.697 26 fall, Project F. The goal is to train a model to predict spatial gene expression (Spatial Transcriptomics) from H&amp;E stains (Histogram). Data comes from HEST-1k ([Huggingface](https://huggingface.co/datasets/MahmoodLab/hest) [Github](https://github.com/mahmoodlab/hest) [Paper](https://arxiv.org/abs/2406.16192)). 
 
 
-See the [notebook guide](notebooks/table_of_contents.md) for the onboarding sequence and experiments, and [study materials](docs/study_materials.md) for supporting tutorials. Original notebooks are in [notebooks/archived/](notebooks/archived/).
+See the [notebook guide](notebooks/table_of_contents.md) for the onboarding sequence and experiments, and [study materials](docs/study_materials.md) for supporting tutorials. 
 
 ## Environment and setup
 
-Python 3.11 is recommended. A virtual environment keeps the project packages separate:
+Python 3.11 is recommended. 
+
+For an onboarding notebook, the first setup cell installs all its dependencies. If a notebook imports reusable project code from `src/`, it uses the repository dependency list. A virtual environment keeps the project packages separate. 
+
+**Using `venv`**
 
 ```powershell
 uv venv --python 3.11
 .venv\Scripts\Activate.ps1
-```
-
-For ordinary notebooks, the first setup cell installs that notebook's dependencies. If a notebook imports reusable project code from `src/`, it uses the repository dependency list:
-
-```powershell
 pip install -r requirements.txt
 ```
 
-## How to run
+**Using `conda`**
 
-**Using `venv`**
-
-```
-uv venv --python 3.11
-pip install -r requirements.txt
-```
-
-**Using `conda`** (conda needs to be installed first)
-
-In a conda terminal
+Download anaconda or miniconda first. In a conda terminal:
 ```powershell
 conda create -n hist2st python=3.11
 conda activate hist2st
 pip install -r requirements.txt
 ```
 
-*Notes:* `requirements.txt` installs the default PyTorch build, not the NVIDIA CUDA build. Apple Silicon can use MPS with a supported macOS/PyTorch setup. See the section below for device checks and installation options. 
+*Attention:* `requirements.txt` installs the default PyTorch build, not the NVIDIA CUDA build. Apple Silicon can use MPS with a supported macOS/PyTorch setup. See the section below for device checks and installation options. 
+
+#TODO: run the scripts in command lines
 
 ### Check CPU and GPU availability
 
@@ -120,14 +110,15 @@ For local runs, ensure the directory has enough free space; raw patch archives c
 Names in brackets are *hidden*. They should never be commited, and their names have been tracked in `.gitignore`. 
 
 ```text
-├── requirements.txt       # dependencies for the helpers in `src/`
+├── requirements.txt       # dependencies for project code in `src/` and `scripts/`
 ├── (data/)                # downloaded dataset.
 ├── (outputs/)             # outputs from our model.
 ├── (checkpoints/)         # checkpoints during training. 
 ├── (.env)                 # the huggingface access key.
 ├── .env.example           # a sample of what an .env would look like.
 ├── configs/               # experiment settings (e.g., YAML)
-├── src/                   # reusable code: data loading, models, metrics
+├── src/                   # reusable helpers like tensor loading and plotting
+├── scripts/               # HEST data and model workflow modules
 ├── notebooks/             # current onboarding and experiment notebooks
 │   └── archived/          # original notebooks retained for reference
 ├── splits/                # saved train/validation/test ID lists

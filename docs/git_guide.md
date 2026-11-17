@@ -1,5 +1,7 @@
 ﻿# Git for the Hist2ST Team: A Beginner's Guide
 
+***AI-generated, for reference***
+
 This guide assumes you have never used Git. It covers getting a project onto your computer, saving work, undoing mistakes, and collaborating through branches and pull requests. Commands work in PowerShell, Windows Terminal, Git Bash, macOS Terminal, and most Linux terminals unless noted.
 
 The companion lecture PDF, `w4_data-explore_exp-design_git_latex_cluster.pdf`, is the course reference for Git and team workflow. This guide applies those ideas to this repository and its team conventions in [notes.md](notes.md): keep `main` runnable, make one branch per task, commit small changes, and have a teammate review before merging.
