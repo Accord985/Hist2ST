@@ -4,7 +4,7 @@
 
 Replace the placeholder URLs with the team's OneDrive study notes when available.
 
-- [Python data basics for Onboarding 01](python_data_basics.ipynb)
+- [Python data basics for Onboarding 01](onbd_00_python_data_basics.ipynb)
 - [Running Hist2ST experiments on Expanse](expanse_experiment_guide.ipynb)
 - [Writing a paper with LaTeX](latex_paper_guide.md)
 

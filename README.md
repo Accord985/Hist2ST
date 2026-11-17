@@ -28,9 +28,10 @@ conda activate hist2st
 pip install -r requirements.txt
 ```
 
-*Attention:* `requirements.txt` installs the default PyTorch build, not the NVIDIA CUDA build. Apple Silicon can use MPS with a supported macOS/PyTorch setup. See the section below for device checks and installation options. 
+This would allow you to run all the notebooks as well as the scripts in `scripts/`. 
 
-#TODO: run the scripts in command lines
+*Attention:* `requirements.txt` installs the default PyTorch build. Though it is fine with Apple Silicon, NVIDIA GPU require the NVIDIA CUDA build. See the section below for device checks and installation options. 
+
 
 ### Check CPU and GPU availability
 
@@ -94,15 +95,14 @@ torch.cuda.is_available()  # True
 
 ## Data storage
 
-It could be helpful to store the data online so that it does not take GBs of space from your local disk. The team's current shared location is Google Drive under `BDD_BJMJ/HEST_breast_ST`. Shared Drive storage lets teammates reuse the same downloads and model output. You may instead use a local directory or use Google Drive Desktop to load the drive contents locally. 
+It could be helpful to store the data online so that it does not take GBs of space from your local disk. The team's current shared location is Google Drive under `BDD_BJMJ/HEST_breast_ST`. Shared Drive storage lets teammates reuse the same downloads and model output. After mounting Google Drive in Colab:
 
-Set `HIST2ST_DATA_DIR` in `.env` to the desired path before running the experiments. For experiments in Colab, mount Google Drive and then set the environment variable to the shared folder:
-
-```bash
-%env DATA_DIR=/content/drive/myDrive/path-to-data
+```python
+from pathlib import Path
+DATA_DIR = Path("/content/drive/MyDrive/path-to-data")
 ```
 
-For local runs, ensure the directory has enough free space; raw patch archives can be large. Do not commit downloaded data, model weights, credentials, or patient-sensitive information.
+You may instead use a local directory or use Google Drive Desktop to load the drive contents locally. For local runs, ensure the directory has enough free space; raw patch archives can be large. Do not commit downloaded data, model weights, credentials, or patient-sensitive information.
 
 
 ## Repository layout
@@ -118,11 +118,10 @@ Names in brackets are *hidden*. They should never be commited, and their names h
 ├── .env.example           # a sample of what an .env would look like.
 ├── configs/               # experiment settings (e.g., YAML)
 ├── src/                   # reusable helpers like tensor loading and plotting
-├── scripts/               # HEST data and model workflow modules
-├── notebooks/             # current onboarding and experiment notebooks
-│   └── archived/          # original notebooks retained for reference
+├── scripts/               # final code for delivery
+├── notebooks/             # tutorials and exploratory experiments
 ├── splits/                # saved train/validation/test ID lists
 ├── jobs/                  # cluster batch scripts
-├── docs/                  # notes, study materials, and python_data_basics.ipynb
-├── Presentations/         # presentation slides
+├── docs/                  # notes, study materials, and tutorials
+├── Presentations/         # presentation slides (pdf)
 ```

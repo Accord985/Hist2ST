@@ -161,10 +161,9 @@ Or stage all current changes (review `git status` first):
 git add .
 ```
 
-Check what is staged, then commit:
+Then commit:
 
 ```bash
-git diff --staged
 git commit -m "Add onboarding notes for Git"
 ```
 
@@ -347,3 +346,4 @@ git switch -c feature/next-task
 - Keep data, model weights, secrets, restricted files, and patient information out of commits.
 - Ask before force-pushing or rewriting shared history. When undoing shared work, prefer `git revert`.
 - If you get stuck, save the exact output of `git status` and ask a teammate before running commands that discard changes.
+- Make sure that the main branch runs
