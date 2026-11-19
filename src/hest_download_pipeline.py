@@ -167,7 +167,8 @@ def download_selection(data_ids, output_dir, max_workers=2, data_folders=None,
     return manifest
 
 
-def export_slide(patches_path, expression_path, output_dir, slide_id):
+def export_slide(patches_path, expression_path, output_dir, slide_id, *,
+                 patch_percentage=100, sampling_seed=42):
     """Export 224x224 RGB PNGs, unchanged .X gene values, barcodes and coordinates.
 
     Each output patch is named SLIDE_patch_INDEX; expression rows are matched
@@ -177,10 +178,14 @@ def export_slide(patches_path, expression_path, output_dir, slide_id):
     import anndata
     import h5py
     import numpy as np
+    import math
+    import random
     from PIL import Image
 
     if not re.fullmatch(r'[A-Za-z0-9-]+', slide_id):
         raise ValueError('Invalid slide ID')
+    if isinstance(patch_percentage, bool) or not math.isfinite(float(patch_percentage)) or not 0 < float(patch_percentage) <= 100:
+        raise ValueError('patch_percentage must be greater than zero and at most 100.')
     slide_dir = Path(output_dir).expanduser().resolve() / slide_id
     slide_dir.mkdir(parents=True, exist_ok=True)
     # Refuse to overwrite a previous slide export. Incomplete folders must be
@@ -208,7 +213,11 @@ def export_slide(patches_path, expression_path, output_dir, slide_id):
                     raise ValueError('Expected one barcode per patch.')
                 value = values[0]
                 return value.decode('utf-8') if isinstance(value, bytes) else str(value)
-            barcodes = [decode_barcode(b) for b in patches['barcode']]
+            # Select indices before reading any image data. Stable slide-specific
+            # seeds keep sampling independent of processing order and cohort size.
+            count = max(1, math.floor(len(images) * float(patch_percentage) / 100))
+            indices = sorted(random.Random(f'{sampling_seed}:{slide_id}').sample(range(len(images)), count))
+            barcodes = [decode_barcode(patches['barcode'][i]) for i in indices]
             if len(set(barcodes)) != len(barcodes):
                 raise ValueError('Duplicate patch barcodes: cannot assign unique targets.')
             row_indices = adata.obs_names.get_indexer(barcodes)
@@ -222,7 +231,7 @@ def export_slide(patches_path, expression_path, output_dir, slide_id):
             if spatial is not None and (len(spatial.shape) != 2 or spatial.shape[1] < 2):
                 raise ValueError('Unexpected expression spatial coordinate shape.')
             rows = []
-            for i, (barcode, row_index) in enumerate(zip(barcodes, row_indices)):
+            for i, barcode, row_index in zip(indices, barcodes, row_indices):
                 name = f'{slide_id}_patch_{i:05d}'
                 folder = slide_dir / name
                 folder.mkdir()
@@ -249,6 +258,8 @@ def export_slide(patches_path, expression_path, output_dir, slide_id):
             result.to_csv(slide_dir / 'patch_manifest.csv', index=False)
             (slide_dir / 'export_complete.json').write_text(json.dumps({
                 'slide_id': slide_id, 'patches': len(rows), 'genes': len(genes),
+                'source_patches': len(images), 'patch_percentage': float(patch_percentage),
+                'sampling_seed': sampling_seed, 'sampling_unit': 'patch_within_slide',
                 'expression_source': 'AnnData.X; values unchanged',
                 'patch_coords': 'H5 coords as supplied; no coordinate conversion',
                 'spot_coords': 'AnnData.obsm spatial as supplied; no coordinate conversion',

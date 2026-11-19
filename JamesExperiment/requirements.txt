@@ -1,0 +1,11 @@
+-r ../requirements.txt
+Pillow
+numpy
+anndata
+h5py>=3.16
+fsspec
+aiohttp
+nbformat
+nbclient
+ipykernel
+matplotlib
