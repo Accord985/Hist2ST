@@ -1,0 +1,12 @@
+{
+  "name": "V_clean",
+  "description": "Standard gene list: top 50 genes by variance of log1p counts, after removing __ambiguous bins and rarely expressed genes. Computed per outer fold on training patients only.",
+  "exclude_prefix": "__",
+  "min_detection": 0.1,
+  "detection_means": "fraction of training spots with count > 0",
+  "n_genes": 50,
+  "rank_by": "variance of log1p(count) across training spots (highest first)",
+  "computed_on": "training patients of each outer fold (GroupKFold by patient, 4 folds)",
+  "gene_symbols": "/Users/jk/JHU/BDD/MLP_JK/results/gene_symbols.csv",
+  "defined_in": "MLP_JK_09_clean_gene_baseline.ipynb"
+}
