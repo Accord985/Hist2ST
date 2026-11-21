@@ -1,0 +1,47 @@
+{
+  "updated": "2026-11-21",
+  "references": {
+    "MLP_JK_Best": {
+      "notebook": "MLP_JK_Best",
+      "setup": "E (center + 5x5 average) + PCA 256 per block",
+      "summary_file": "results/MLP_JK_Best/summary.csv",
+      "summary_model": "E 5x5 average",
+      "head_inputs": 512,
+      "head_weights": 72114,
+      "val_PCC": 0.2375879332225837,
+      "val_NRMSE": 1.0804165303707125,
+      "test_MSE": 0.94512277841568,
+      "pooled_PCC": 0.2052587796404939,
+      "within_PCC": 0.1731274082529586,
+      "NRMSE": 1.0673205852508545,
+      "level_error": 0.5550406582867109,
+      "pattern_error": 0.3900821578787956
+    },
+    "MLP_JK_Best_PLS": {
+      "notebook": "MLP_JK_Best_PLS",
+      "setup": "E (center + 5x5 average) + kernel PLS 32 per block",
+      "summary_file": "results/MLP_JK_Best_PLS/summary.csv",
+      "summary_model": "E 5x5 average, PLS k=32",
+      "head_inputs": 64,
+      "head_weights": 14770,
+      "val_PCC": 0.23851826547913912,
+      "val_NRMSE": 1.0767365992069244,
+      "test_MSE": 0.9369199723005295,
+      "pooled_PCC": 0.252869422177581,
+      "within_PCC": 0.1762045524742843,
+      "NRMSE": 1.0624644756317139,
+      "level_error": 0.5442052087766982,
+      "pattern_error": 0.39271472811243996
+    }
+  },
+  "mean_predictor": {
+    "val_NRMSE": 1.1127891540527344,
+    "test_MSE": 0.9987317621707916,
+    "NRMSE": 1.0979701280593872
+  },
+  "bar_to_beat": {
+    "val_PCC_above": 0.23851826547913912,
+    "val_NRMSE_at_most": 1.1127891540527344
+  },
+  "rule": "A new setting beats the references only if its validation PCC is above bar_to_beat.val_PCC_above and its validation NRMSE is at most bar_to_beat.val_NRMSE_at_most (the mean predictor's). Validation = patient-grouped inner validation on training patients. Test scores are reported, never used to choose. Report every new experiment against both references."
+}

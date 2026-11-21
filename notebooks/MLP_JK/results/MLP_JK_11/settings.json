@@ -1,0 +1,74 @@
+{
+  "notebook": "MLP_JK_11",
+  "methods": [
+    "PCA",
+    "PLS",
+    "Learned",
+    "Learned slow"
+  ],
+  "k_grid": [
+    32,
+    64,
+    128,
+    256,
+    512
+  ],
+  "k_max_pls": 512,
+  "pls_algorithm": "kernel PLS (Dayal & MacGregor 1997) in numpy, reproducing sklearn PLSRegression (scale=True, sklearn sign rule and rotations)",
+  "projection_lr": {
+    "Learned": 0.0003,
+    "Learned slow": 3e-05
+  },
+  "projection_per_block": true,
+  "learned_projection_weight_decay": 0.0,
+  "sklearn_pls_measured_seconds": {
+    "16": 12.5,
+    "32": 31.7,
+    "64": 95.2
+  },
+  "sklearn_check_k": 32,
+  "memory_measure": "psutil RSS sampled every 50 ms (peak above start); torch.mps.driver_allocated_memory for the GPU",
+  "hardware": {
+    "machine": "Mac17,3",
+    "chip": "Apple M5",
+    "cpu_cores": 10,
+    "memory_GB": 17.2,
+    "os": "macOS-27.2.1-arm64-arm-64bit",
+    "device": "mps",
+    "torch": "2.13.0"
+  },
+  "gene_rule": {
+    "name": "V_clean",
+    "description": "Standard gene list: top 50 genes by variance of log1p counts, after removing __ambiguous bins and rarely expressed genes. Computed per outer fold on training patients only.",
+    "exclude_prefix": "__",
+    "min_detection": 0.1,
+    "detection_means": "fraction of training spots with count > 0",
+    "n_genes": 50,
+    "rank_by": "variance of log1p(count) across training spots (highest first)",
+    "computed_on": "training patients of each outer fold (GroupKFold by patient, 4 folds)",
+    "gene_symbols": "/Users/jk/JHU/BDD/MLP_JK/results/gene_symbols.csv",
+    "defined_in": "MLP_JK_09_clean_gene_baseline.ipynb"
+  },
+  "neighbor_distance": {
+    "5x5": 3.0
+  },
+  "n_folds": 4,
+  "min_test_sd": 0.05,
+  "seed": 0,
+  "hidden_size": 128,
+  "dropout": 0.3,
+  "weight_decay": 0.001,
+  "learning_rate": 0.0003,
+  "batch_size": 256,
+  "max_epochs": 100,
+  "patience": 10,
+  "shrink_factors": [
+    0.2,
+    0.4,
+    0.6,
+    0.8,
+    1.0
+  ],
+  "n_val_groups": 4,
+  "n_final_seeds": 3
+}
