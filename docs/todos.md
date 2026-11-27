@@ -6,4 +6,5 @@
 - Remove the section on how current notebooks relate to archived originals when the archived notebooks are deleted. (Source: [How the current notebooks relate to the archived originals](../notebooks/starting_guide.md#how-the-current-notebooks-relate-to-the-archived-originals).)
 
 
-the split: the code to generate it stored in the src/, later experiments use it
+the split: the code to generate it stored in the src/, results stored in splits/. later experiments use it
+refactor the experiment notebooks: keep the idea, but follow our styles.
