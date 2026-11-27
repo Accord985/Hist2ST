@@ -4,7 +4,7 @@
 
 This guide assumes you have never used Git. It covers getting a project onto your computer, saving work, undoing mistakes, and collaborating through branches and pull requests. Commands work in PowerShell, Windows Terminal, Git Bash, macOS Terminal, and most Linux terminals unless noted.
 
-The companion lecture PDF, `w4_data-explore_exp-design_git_latex_cluster.pdf`, is the course reference for Git and team workflow. This guide applies those ideas to this repository and its team conventions in [notes.md](notes.md): keep `main` runnable, make one branch per task, commit small changes, and have a teammate review before merging.
+The companion lecture PDF, `w4_data-explore_exp-design_git_latex_cluster.pdf` (available on onedrive), is the course reference for Git and team workflow. This recommends these conventions: keep `main` runnable, make one branch per task, commit small changes, and have a teammate review before merging.
 
 ## 1. What Git does
 
@@ -17,8 +17,6 @@ A few terms:
 - **Remote:** another copy of the repository, usually on GitHub or GitLab. The common remote name is `origin`.
 - **Branch:** a movable line of work. The shared stable branch is often called `main`.
 - **Pull request (PR):** a request to review and merge a branch into another branch. GitLab often calls this a **merge request (MR)**.
-
-Git does not automatically save every edit. You choose which changes to include in each commit.
 
 ## 2. Install Git and identify yourself
 
@@ -146,6 +144,23 @@ git diff
 ```
 
 `git status` summarizes changed, staged, and untracked files. `git diff` shows edits that have not been staged. Review these before committing. In this project, do not commit large data files or model weights unless the team has agreed; never commit passwords, API keys, restricted data, or patient data. Check `.gitignore` and ask a teammate if you are unsure whether a file belongs in Git.
+
+### Ignore files that should stay local
+
+The `.gitignore` file tells Git which files or folders to leave out of `git status` and future commits. Add patterns such as `.env` for environment variables and `*.csv` for generated data. A common project ignore file might contain:
+
+```text
+.env
+data/
+checkpoints/
+outputs/
+```
+
+Use `.gitignore` to keep local secrets and API keys, large datasets, model weights, generated outputs, and private data out of Git. Ignoring a file does not delete it from your computer or remove it if Git already tracks it. 
+
+*To stop tracking a file while keeping the local copy, add its path or pattern to `.gitignore`, then run `git rm --cached path/to/file` and commit the removal. For an entire tracked folder, use `git rm --cached -r path/to/folder/`.*
+
+*For secrets or restricted files that have already been committed, use these steps: replace or revoke exposed credentials, remove the file from tracking, ask the team how to remove the file from repository history, and rotate credentials even if the file is removed. Never use a secret or private file to test `.gitignore`.*
 
 ### Stage and commit
 
@@ -321,7 +336,7 @@ git pull origin main
 git switch -c feature/next-task
 ```
 
-## 8. Small command reference
+## 8. Small command cheatsheet
 
 | Goal | Command |
 | --- | --- |
@@ -336,6 +351,8 @@ git switch -c feature/next-task
 | Save a checkpoint | `git commit -m "Describe change"` |
 | Upload branch commits | `git push` |
 
+Most IDEs also include a Git control UI for viewing changes, staging files, creating commits, switching branches, pulling, and pushing. Search the web for “Git control UI in [your IDE]” or check its instructions/documentations specific to your IDE.
+
 ## 9. A few habits that prevent trouble
 
 - Run `git status` often; it tells you where you are and what Git sees.
@@ -346,4 +363,4 @@ git switch -c feature/next-task
 - Keep data, model weights, secrets, restricted files, and patient information out of commits.
 - Ask before force-pushing or rewriting shared history. When undoing shared work, prefer `git revert`.
 - If you get stuck, save the exact output of `git status` and ask a teammate before running commands that discard changes.
-- Make sure that the main branch runs
+- Make sure that the main branch runs.
